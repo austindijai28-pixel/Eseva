@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Police Login | e-Seva Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: linear-gradient(135deg, var(--navy) 0%, #1a3a6b 100%); }
+
+        .login-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 42px 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-header .emblem { font-size: 3rem; display: block; margin-bottom: 12px; }
+        .login-header h1 { font-size: 1.4rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+        .login-header p { color: var(--muted); font-size: 0.85rem; }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 24px 0;
+        }
+
+        .pass-wrap { position: relative; }
+        .pass-wrap input { padding-right: 42px; }
+        .pass-toggle {
+            position: absolute;
+            right: 12px; top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--muted);
+        }
+
+        .demo-creds {
+            background: var(--light-bg);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .demo-creds strong { color: var(--blue); }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-wrap">
+        <div class="login-card">
+
+            <div class="login-header">
+                <span class="emblem">👮</span>
+                <h1>Police Officer Login</h1>
+                <p>Authorized Personnel Only</p>
+            </div>
+
+            <!-- Alert -->
+            <div class="alert alert-error" id="alert-error"></div>
+
+            <!-- Login Form -->
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter your username" maxlength="50" autocomplete="username" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="pass-wrap">
+                    <input type="password" id="password" placeholder="Enter your password" maxlength="100" autocomplete="current-password" />
+                    <button class="pass-toggle" onclick="togglePass()" title="Show/Hide password">👁️</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-full" onclick="doLogin()">🔐 Login to Dashboard</button>
+
+            <hr class="divider">
+
+            <!-- Demo Credentials hint (remove in production!) -->
+            <div class="demo-creds">
+                📌 <strong>Demo:</strong> Username: <strong>admin</strong> &nbsp;|&nbsp; Password: <strong>admin123</strong>
+            </div>
+
+            <div class="back-link">
+                <a href="index.html">← Back to Home</a>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ---- Toggle Password Visibility ----
+        function togglePass() {
+            const pwd = document.getElementById('password');
+            pwd.type = pwd.type === 'password' ? 'text' : 'password';
+        }
+
+        // ---- Police Login ----
+        function doLogin() {
+            hideAlerts();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            // Basic validation
+            if (!username || !password) {
+                showAlert('error', '⚠️ Please enter both username and password.');
+                return;
+            }
+
+            // Send to PHP backend for authentication
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            fetch('../backend/login.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Store session info in localStorage (simple demo approach)
+                    localStorage.setItem('eseva_officer', data.username);
+                    localStorage.setItem('eseva_logged_in', 'true');
+
+                    // Redirect to dashboard
+                    window.location.href = 'dashboard.html';
+                } else {
+                    showAlert('error', '❌ ' + (data.error || 'Invalid username or password.'));
+                }
+            })
+            .catch(err => {
+                showAlert('error', '❌ Cannot connect to server. Make sure the backend (PHP) is running.');
+                console.error(err);
+            });
+        }
+
+        function showAlert(type, msg) {
+            const el = document.getElementById(`alert-${type}`);
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function hideAlerts() {
+            document.querySelectorAll('.alert').forEach(a => a.style.display = 'none');
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter') doLogin();
+        });
+    </script>
+
+</body>
+</html>

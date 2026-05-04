@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Criminal Records | e-Seva Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #results-section { display: none; }
+
+        .result-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .result-avatar {
+            width: 56px; height: 56px;
+            background: var(--navy);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+
+        .result-info h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 8px;
+        }
+
+        .result-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .meta-chip {
+            background: var(--light-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+
+        .meta-chip span { font-weight: 600; color: var(--blue); }
+
+        .search-hint {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--muted);
+        }
+
+        .search-hint .icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+
+        .result-count {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .disclaimer {
+            background: #fef8e8;
+            border: 1px solid #f0d080;
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            font-size: 0.82rem;
+            color: #7a5a00;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-banner">
+        Government of Tamil Nadu &nbsp;|&nbsp; Tamil Nadu Police Department &nbsp;|&nbsp; e-Seva Digital Services Portal
+    </div>
+
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">🛡️ e-Seva Portal <span class="badge">TN POLICE</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html">🏠 Home</a></li>
+                <li><a href="search.html" class="active">🔍 Search Records</a></li>
+                <li><a href="complaint.html">📝 Register Complaint</a></li>
+                <li><a href="login.html" class="btn-login">🔐 Police Login</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <h1>🔍 Criminal Record Search</h1>
+        <p>Search the database by criminal name to view details</p>
+    </div>
+
+    <div class="container">
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            ⚠️ <strong>Important:</strong> This database is for law enforcement purposes only. Misuse of this information is a punishable offense under IPC Section 182.
+        </div>
+
+        <!-- Search Card -->
+        <div class="card">
+            <h2>🔎 Search by Name</h2>
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Enter criminal name (e.g., Rajan Kumar)" maxlength="100" />
+                <button class="btn btn-primary" onclick="searchCriminal()">Search</button>
+            </div>
+            <p style="font-size:0.8rem; color:var(--muted); margin-top:8px;">Partial name searches are supported. Minimum 2 characters required.</p>
+        </div>
+
+        <!-- Alert Messages -->
+        <div class="alert alert-error" id="alert-error"></div>
+        <div class="alert alert-warning" id="alert-warning"></div>
+
+        <!-- Spinner -->
+        <div class="spinner" id="spinner">⏳ Searching database...</div>
+
+        <!-- Default hint when no search done -->
+        <div class="search-hint" id="search-hint">
+            <span class="icon">🗂️</span>
+            <p>Enter a name above and click <strong>Search</strong> to look up criminal records.</p>
+        </div>
+
+        <!-- Results Section -->
+        <section id="results-section">
+            <p class="result-count" id="result-count"></p>
+            <div id="results-list"></div>
+        </section>
+
+    </div>
+
+    <footer>
+        <strong>Tamil Nadu Police e-Seva Portal</strong> &mdash; Government of Tamil Nadu &nbsp;|&nbsp; For Emergencies, Call <strong>100</strong>
+    </footer>
+
+    <script>
+        // ---- Search Criminal Records ----
+        // Calls the PHP backend which queries MySQL
+
+        function searchCriminal() {
+            const query = document.getElementById('search-input').value.trim();
+
+            // Basic validation
+            if (query.length < 2) {
+                showAlert('error', '⚠️ Please enter at least 2 characters to search.');
+                return;
+            }
+
+            // Hide previous results
+            hideAlerts();
+            document.getElementById('search-hint').style.display = 'none';
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('spinner').style.display = 'block';
+
+            // Make AJAX request to PHP backend
+            fetch(`../backend/search.php?name=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('spinner').style.display = 'none';
+
+                    if (!data.success) {
+                        showAlert('error', '❌ ' + (data.message || 'No records found.'));
+                        return;
+                    }
+
+                    displayResults(data.data, query);
+                })
+                .catch(err => {
+                    document.getElementById('spinner').style.display = 'none';
+                    showAlert('error', '❌ Could not connect to the server. Make sure the backend is running.');
+                    console.error(err);
+                });
+        }
+
+        // ---- Display search results ----
+        function displayResults(results, query) {
+            const section = document.getElementById('results-section');
+            const list = document.getElementById('results-list');
+            const count = document.getElementById('result-count');
+
+            section.style.display = 'block';
+            list.innerHTML = '';
+
+            if (!results || results.length === 0) {
+                count.textContent = `No records found for "${query}"`;
+                list.innerHTML = `<div class="no-records">
+                    🔍 No criminal records found matching "<strong>${escapeHtml(query)}</strong>".<br>
+                    <small>Try a different spelling or partial name.</small>
+                </div>`;
+                return;
+            }
+
+            count.textContent = `Found ${results.length} record(s) for "${query}"`;
+
+            results.forEach(person => {
+                const statusClass = person.status === 'Wanted' ? 'badge-wanted' : 'badge-arrested';
+                const emoji = person.status === 'Wanted' ? '🔴' : '🟢';
+
+                list.innerHTML += `
+                <div class="result-card">
+                    <div class="result-avatar">👤</div>
+                    <div class="result-info">
+                        <h3>${escapeHtml(person.name)}
+                            <span class="badge-status ${statusClass}" style="margin-left:10px; font-size:0.7rem;">
+                                ${emoji} ${escapeHtml(person.status)}
+                            </span>
+                        </h3>
+                        <p style="color:var(--muted); font-size:0.85rem;">Crime: <strong style="color:var(--danger)">${escapeHtml(person.crime)}</strong></p>
+                        <div class="result-meta">
+                            <div class="meta-chip">Age: <span>${escapeHtml(String(person.age))}</span></div>
+                            <div class="meta-chip">📍 <span>${escapeHtml(person.location)}</span></div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        // ---- Helper: Show alert ----
+        function showAlert(type, msg) {
+            const el = document.getElementById(`alert-${type}`);
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function hideAlerts() {
+            document.querySelectorAll('.alert').forEach(a => a.style.display = 'none');
+        }
+
+        // ---- Helper: Escape HTML to prevent XSS ----
+        function escapeHtml(text) {
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+
+        // Allow pressing Enter to search
+        document.getElementById('search-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') searchCriminal();
+        });
+    </script>
+
+</body>
+</html>

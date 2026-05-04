@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Complaint | e-Seva Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .form-container { max-width: 680px; margin: 0 auto; }
+
+        .success-box {
+            display: none;
+            background: #e8f5ee;
+            border: 2px solid var(--success);
+            border-radius: var(--radius);
+            padding: 30px;
+            text-align: center;
+        }
+
+        .success-box .icon { font-size: 3rem; display: block; margin-bottom: 12px; }
+        .success-box h3 { color: var(--success); font-size: 1.2rem; margin-bottom: 8px; }
+        .success-box p { color: #2d6a4a; font-size: 0.9rem; }
+        .success-box .ref { font-weight: 700; color: var(--navy); font-size: 1.1rem; }
+
+        .char-counter { font-size: 0.75rem; color: var(--muted); text-align: right; margin-top: 4px; }
+
+        .steps {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            flex: 1;
+            background: var(--light-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            font-size: 0.8rem;
+            text-align: center;
+            min-width: 130px;
+        }
+
+        .step .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px; height: 22px;
+            background: var(--blue);
+            color: var(--white);
+            border-radius: 50%;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-banner">
+        Government of Tamil Nadu &nbsp;|&nbsp; Tamil Nadu Police Department &nbsp;|&nbsp; e-Seva Digital Services Portal
+    </div>
+
+    <nav>
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo">🛡️ e-Seva Portal <span class="badge">TN POLICE</span></a>
+            <ul class="nav-links">
+                <li><a href="index.html">🏠 Home</a></li>
+                <li><a href="search.html">🔍 Search Records</a></li>
+                <li><a href="complaint.html" class="active">📝 Register Complaint</a></li>
+                <li><a href="login.html" class="btn-login">🔐 Police Login</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <h1>📝 Register a Complaint</h1>
+        <p>Submit your complaint online — secure and confidential</p>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+
+            <!-- How it works steps -->
+            <div class="steps">
+                <div class="step"><div class="num">1</div><br>Fill the form</div>
+                <div class="step"><div class="num">2</div><br>Submit securely</div>
+                <div class="step"><div class="num">3</div><br>Get reference ID</div>
+                <div class="step"><div class="num">4</div><br>Police follow up</div>
+            </div>
+
+            <!-- Alert Messages -->
+            <div class="alert alert-error" id="alert-error"></div>
+            <div class="alert alert-success" id="alert-success"></div>
+
+            <!-- Success Box (shown after submission) -->
+            <div class="success-box" id="success-box">
+                <span class="icon">✅</span>
+                <h3>Complaint Registered Successfully!</h3>
+                <p>Your complaint has been submitted. Reference ID: <span class="ref" id="ref-id"></span></p>
+                <p style="margin-top:10px;">Our officers will review and contact you within 24–48 hours.</p>
+                <button class="btn btn-primary mt-16" onclick="resetForm()">📝 Register Another Complaint</button>
+            </div>
+
+            <!-- Complaint Form -->
+            <div class="card" id="complaint-form-card">
+                <h2>📋 Complaint Details</h2>
+
+                <div class="alert alert-warning" style="display:block; font-size:0.82rem;">
+                    🔒 Your information is confidential and will only be shared with the investigating officer.
+                </div>
+
+                <div class="grid-2">
+                    <!-- Full Name -->
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" placeholder="Enter your full name" maxlength="100" />
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" placeholder="10-digit mobile number" maxlength="10" />
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div class="form-group">
+                    <label for="address">Address *</label>
+                    <input type="text" id="address" placeholder="Enter your full address" maxlength="255" />
+                </div>
+
+                <!-- Complaint Description -->
+                <div class="form-group">
+                    <label for="complaint">Complaint Description *</label>
+                    <textarea id="complaint" placeholder="Describe the incident in detail — include date, time, location, and people involved..." maxlength="2000" onkeyup="updateCounter()"></textarea>
+                    <div class="char-counter"><span id="char-count">0</span>/2000 characters</div>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="btn btn-primary btn-full" onclick="submitComplaint()">
+                    📤 Submit Complaint
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <footer>
+        <strong>Tamil Nadu Police e-Seva Portal</strong> &mdash; Government of Tamil Nadu &nbsp;|&nbsp; For Emergencies, Call <strong>100</strong>
+    </footer>
+
+    <script>
+        // ---- Character Counter for Complaint Box ----
+        function updateCounter() {
+            const len = document.getElementById('complaint').value.length;
+            document.getElementById('char-count').textContent = len;
+        }
+
+        // ---- Submit Complaint ----
+        function submitComplaint() {
+            hideAlerts();
+
+            // Get values
+            const name      = document.getElementById('name').value.trim();
+            const phone     = document.getElementById('phone').value.trim();
+            const address   = document.getElementById('address').value.trim();
+            const complaint = document.getElementById('complaint').value.trim();
+
+            // Validation
+            if (!name || !phone || !address || !complaint) {
+                showAlert('error', '⚠️ All fields are required. Please fill in every field.');
+                return;
+            }
+
+            if (name.length < 3) {
+                showAlert('error', '⚠️ Please enter your full name (at least 3 characters).');
+                return;
+            }
+
+            // Phone: must be exactly 10 digits
+            if (!/^\d{10}$/.test(phone)) {
+                showAlert('error', '⚠️ Phone number must be exactly 10 digits (numbers only).');
+                return;
+            }
+
+            if (complaint.length < 20) {
+                showAlert('error', '⚠️ Please describe your complaint in at least 20 characters.');
+                return;
+            }
+
+            // Build form data
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('phone', phone);
+            formData.append('address', address);
+            formData.append('complaint', complaint);
+
+            // Send to PHP backend
+            fetch('../backend/complaint.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success box
+                    document.getElementById('complaint-form-card').style.display = 'none';
+                    document.getElementById('ref-id').textContent = data.ref_id;
+                    document.getElementById('success-box').style.display = 'block';
+                } else {
+                    showAlert('error', '❌ ' + (data.message || 'Something went wrong. Please try again.'));
+                }
+            })
+            .catch(err => {
+                showAlert('error', '❌ Could not connect to the server. Make sure the backend is running.');
+                console.error(err);
+            });
+        }
+
+        // ---- Reset form for new complaint ----
+        function resetForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('complaint').value = '';
+            document.getElementById('char-count').textContent = '0';
+            document.getElementById('success-box').style.display = 'none';
+            document.getElementById('complaint-form-card').style.display = 'block';
+        }
+
+        function showAlert(type, msg) {
+            const el = document.getElementById(`alert-${type}`);
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+
+        function hideAlerts() {
+            document.querySelectorAll('.alert').forEach(a => a.style.display = 'none');
+        }
+
+        // Only allow digits in phone field
+        document.getElementById('phone').addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+        });
+    </script>
+
+</body>
+</html>

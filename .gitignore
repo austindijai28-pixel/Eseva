@@ -1,0 +1,8 @@
+# PHP
+.env
+composer.lock
+vendor/
+
+# OS junk
+.DS_Store
+Thumbs.db
